@@ -248,7 +248,7 @@ class InputfieldFileS3 extends InputfieldFile implements Module  {
 		else {
 			$ssl = ($this->useSSL) ? 'https' : 'http';
 			$domain = $this->domain();
-			$event->return = "{$ssl}://{$domain}/" . $event->object->page . "/" . $event->object->name.$this->localStorage;
+			$event->return = "{$ssl}://{$domain}/" . $event->object->page . "/" . $event->object->name;
 		}
 	}
 
