@@ -10,6 +10,7 @@ class InputfieldFileS3Config extends ModuleConfig {
                 'type'  => 'text',
                 'label' => $this->_('Key'),
                 'description' => $this->_('Key used for authentication'),
+                'notes' => $this->_("[Info!](http://docs.aws.amazon.com/general/latest/gr/managing-aws-access-keys.html)"),
                 'required' => true,
 				'columnWidth' => 50,
                 'value' => $this->_(''),
@@ -20,6 +21,7 @@ class InputfieldFileS3Config extends ModuleConfig {
                 'type'  => 'text',
                 'label' => $this->_('Secret'),
                 'description' => $this->_('Secret used for authentication'),
+                'notes' => $this->_("[Info!](http://docs.aws.amazon.com/general/latest/gr/managing-aws-access-keys.html)"),
                 'required' => true,
 				'columnWidth' => 50,
                 'value' => $this->_(''),
@@ -29,6 +31,7 @@ class InputfieldFileS3Config extends ModuleConfig {
                 'name'  => 'bucket',
                 'type'  => 'text',
                 'label' => $this->_('Bucket name'),
+                'description' => $this->_("Set bucket name. Bucket must exist beforehand."),
                 'notes' => $this->_("To serve files from own (sub)domain [see here](http://docs.aws.amazon.com/AmazonS3/latest/dev/VirtualHosting.html#VirtualHostingCustomURLs)"
 				),
                 'required' => true,
@@ -62,6 +65,7 @@ class InputfieldFileS3Config extends ModuleConfig {
 				'name'  => 'region',
 				'type'  => 'select',
 				'label' => $this->_('Region'),
+				'description' => $this->_('Select a region for files to be stored.'),
 				'notes' => $this->_("[Info!](http://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region)"),
 				'required' => true,
 				'options' => array(
