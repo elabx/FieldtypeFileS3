@@ -1,0 +1,216 @@
+<?php namespace ProcessWire;
+
+/**
+ * ProcessWire File Fieldtype
+ *
+ * Field that stores one or more files with optional description.
+ *
+ * For documentation about the fields used in this class, please see:
+ * /wire/core/Fieldtype.php
+ * /wire/core/FieldtypeMulti.php
+ *
+ * ProcessWire 3.x, Copyright 2016 by Ryan Cramer
+ * https://processwire.com
+ *
+ */
+
+class FieldtypeFileS3 extends FieldtypeFile {
+	public static function getModuleInfo() {
+		return array(
+			'title' => __('FieldtypeFileS3', __FILE__), // Module Title
+			'summary' => __('One or more file uploads (sortable)', __FILE__), // Module Summary
+			'version' => 001,
+			'permanent' => false,
+			'installs'  => 'InputfieldFileS3'
+			);
+	}
+
+    public function ___uninstall() {
+		parent::___uninstall();
+		$this->modules->uninstall("InputfieldFileS3");
+    }
+
+	/**
+	 * Given a raw value (value as stored in DB), return the value as it would appear in a Page object
+ 	 *
+	 * @param Page $page
+	 * @param Field $field
+	 * @param string|int|array $value
+	 * @return string|int|array|object $value
+	 *
+	 */
+	public function ___wakeupValue(Page $page, Field $field, $value) {
+
+		if($value instanceof Pagefiles) return $value;
+		$pagefiles = $this->getBlankValue($page, $field);
+		if(empty($value)) return $pagefiles;
+
+		if(!is_array($value) || array_key_exists('data', $value)) $value = array($value);
+		foreach($value as $v) {
+			if(empty($v['data'])) continue;
+			$pagefile = $this->getBlankPagefile($pagefiles, $v['data']);
+			$pagefile->description(true, $v['description']);
+			if(isset($v['modified'])) $pagefile->modified = $v['modified'];
+			if(isset($v['created'])) $pagefile->created = $v['created'];
+			if(isset($v['tags'])) $pagefile->tags = $v['tags'];
+			$pagefile->fSize = $v['filesize'];
+			$pagefile->setTrackChanges(true);
+			$pagefiles->add($pagefile);
+		}
+
+		$pagefiles->resetTrackChanges(true);
+		return $pagefiles;
+	}
+
+	/**
+	 * Given an 'awake' value, as set by wakeupValue, convert the value back to a basic type for storage in DB.
+	 *
+	 * @param Page $page
+	 * @param Field $field
+	 * @param string|int|array|object $value
+	 * @return string|int
+	 *
+	 */
+	public function ___sleepValue(Page $page, Field $field, $value) {
+
+		$sleepValue = array();
+		if(!$value instanceof Pagefiles) return $sleepValue;
+
+		foreach($value as $pagefile) {
+			$item = array(
+				'data' => $pagefile->basename,
+				'description' => $pagefile->description(true),
+				'filesize'    => $pagefile->fSize,
+				);
+
+			if($field->fileSchema & self::fileSchemaDate) {
+				$item['modified'] = date('Y-m-d H:i:s', $pagefile->modified);
+				$item['created'] = date('Y-m-d H:i:s', $pagefile->created);
+			}
+
+			if($field->fileSchema & self::fileSchemaTags) {
+				$item['tags'] = $pagefile->tags;
+			}
+
+			$sleepValue[] = $item;
+		}
+		return $sleepValue;
+	}
+
+	public function getDatabaseSchema(Field $field) {
+
+		$database = $this->wire('database');
+		$schema = parent::getDatabaseSchema($field);
+		$table = $database->escapeTable($field->table);
+		$maxLen = $database->getMaxIndexLength();
+
+		$schema['data'] = "varchar($maxLen) NOT NULL";
+		$schema['description'] = "text NOT NULL";
+		$schema['filesize'] = "int NOT NULL";
+		$schema['modified'] = "datetime";
+		$schema['created'] = "datetime";
+		$schema['keys']['description'] = 'FULLTEXT KEY description (description)';
+		$schema['keys']['modified'] = 'index (modified)';
+		$schema['keys']['created'] = 'index (created)';
+
+		if($field->id && !($field->fileSchema & self::fileSchemaDate)) {
+			// permanently add new 'modified' and 'created' column to file schema
+			$addDates = false;
+
+			try {
+				$query = $database->prepare("SHOW COLUMNS FROM `$table` WHERE Field='modified'");
+				$query->execute();
+				$numRows = (int) $query->rowCount();
+				$query->closeCursor();
+
+				if($numRows) {
+					$field->fileSchema = $field->fileSchema | self::fileSchemaDate;
+					$field->save();
+				} else {
+					$addDates = true;
+				}
+			} catch(\Exception $e) {
+				// intentionally blank
+			}
+
+			if($addDates) try {
+				$database->exec("ALTER TABLE `{$table}` ADD `modified` $schema[modified]");
+				$database->exec("ALTER TABLE `{$table}` ADD `created` $schema[created]");
+				$database->exec("ALTER TABLE `{$table}` ADD " . $schema['keys']['modified']);
+				$database->exec("ALTER TABLE `{$table}` ADD " . $schema['keys']['created']);
+				$field->fileSchema = $field->fileSchema | self::fileSchemaDate;
+				$field->save();
+				$date = date('Y-m-d H:i:s');
+				$query = $database->prepare("UPDATE `$table` SET created=:created, modified=:modified");
+				$query->bindValue(":created", $date);
+				$query->bindValue(":modified", $date);
+				$query->execute();
+				$this->message("Added created/modified to DB schema for '{$field->name}'", Notice::log);
+
+			} catch(\Exception $e) {
+
+				$query = $database->prepare("SHOW COLUMNS FROM `$table` WHERE Field='modified'");
+				$query->execute();
+				$numRows = (int) $query->rowCount();
+				$query->closeCursor();
+
+				if($numRows) {
+					$field->fileSchema = $field->fileSchema | self::fileSchemaDate;
+					$field->save();
+				} else {
+					$this->error("Error adding created/modified to '{$field->name}' schema", Notice::log);
+				}
+
+			}
+		}
+
+		$tagsAction = null; // null=no change; 1=add tags, 0=remove tags
+		$schemaTags = 'varchar(250) NOT NULL';
+		$schemaTagsIndex = 'FULLTEXT KEY tags (tags)';
+
+		if($field->useTags && !($field->fileSchema & self::fileSchemaTags)) $tagsAction = 'add';
+			else if(!$field->useTags && ($field->fileSchema & self::fileSchemaTags)) $tagsAction = 'remove';
+
+		if($tagsAction === 'add') {
+			// add tags field
+			try {
+				$query = $database->prepare("SHOW COLUMNS FROM `$table` WHERE Field='tags'");
+				$query->execute();
+				$numRows = (int) $query->rowCount();
+				$query->closeCursor();
+			} catch(\Exception $e) {
+				// probably in a clone, we can ignore and skip over any further changes
+				$numRows = 1;
+			}
+
+			if(!$numRows) try {
+				$database->exec("ALTER TABLE `{$table}` ADD tags $schemaTags");
+				$database->exec("ALTER TABLE `{$table}` ADD $schemaTagsIndex");
+				$field->fileSchema = $field->fileSchema | self::fileSchemaTags;
+				$field->save();
+				$this->message("Added tags to DB schema for '{$field->name}'", Notice::log);
+			} catch(\Exception $e) {
+				$this->error("Error adding tags to '{$field->name}' schema", Notice::log);
+			}
+
+		} else if($tagsAction === 'remove') {
+			// remove tags field
+			try {
+				$database->exec("ALTER TABLE `{$table}` DROP INDEX tags");
+				$database->exec("ALTER TABLE `{$table}` DROP tags");
+				$field->fileSchema = $field->fileSchema & ~self::fileSchemaTags;
+				$field->save();
+				$this->message("Dropped tags from DB schema for '{$field->name}'", Notice::log);
+			} catch(\Exception $e) {
+				$this->error("Error dropping tags from '{$field->name}' schema", Notice::log);
+			}
+		}
+
+		if($field->fileSchema & self::fileSchemaTags) {
+			$schema['tags'] = $schemaTags;
+			$schema['keys']['tags'] = $schemaTagsIndex;
+		}
+
+		return $schema;
+	}
+}
