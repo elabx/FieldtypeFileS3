@@ -253,7 +253,69 @@ class InputfieldFileS3 extends InputfieldFile implements Module  {
 	}
 
 	protected function domain() {
-		return ($this->useMyDomain) ? $this->bucket : "s3.{$this->region}.amazonaws.com/{$this->bucket}";
+		switch ($this->region) {
+			case 'us-east-1':
+				$endpoint = 's3.amazonaws.com';
+				break;
+
+			case 'us-east-2':
+				$endpoint = 's3.us-east-2.amazonaws.com';
+				break;
+
+			case 'us-west-1':
+				$endpoint = 's3-us-west-1.amazonaws.com';
+				break;
+
+			case 'us-west-2':
+				$endpoint = 's3-us-west-2.amazonaws.com';
+				break;
+
+			case 'ca-central-1':
+				$endpoint = 's3-ca-central-1.amazonaws.com';
+				break;
+
+			case 'eu-west-1':
+				$endpoint = 's3-eu-west-1.amazonaws.com';
+				break;
+
+			case 'eu-west-2':
+				$endpoint = 's3-eu-west-2.amazonaws.com';
+				break;
+
+			case 'eu-central-1':
+				$endpoint = 's3-eu-central-1.amazonaws.com';
+				break;
+
+			case 'ap-south-1':
+				$endpoint = 's3-ap-south-1.amazonaws.com';
+				break;
+
+			case 'ap-southeast-1':
+				$endpoint = 's3-ap-southeast-1.amazonaws.com';
+				break;
+
+			case 'ap-southeast-2':
+				$endpoint = 's3-ap-southeast-2.amazonaws.com';
+				break;
+
+			case 'ap-northeast-1':
+				$endpoint = 's3-ap-northeast-1.amazonaws.com';
+				break;
+
+			case 'ap-northeast-2':
+				$endpoint = 's3-ap-northeast-2.amazonaws.com';
+				break;
+
+			case 'sa-east-1':
+				$endpoint = 's3-sa-east-1.amazonaws.com';
+				break;
+
+			default:
+				$endpoint = 's3.amazonaws.com';
+				break;
+		}
+
+		return ($this->useMyDomain) ? $this->bucket : "{$endpoint}/{$this->bucket}";
 	}
 
 	protected function uploadFileToS3($pagefile, $pageID) {
