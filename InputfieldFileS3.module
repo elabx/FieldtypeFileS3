@@ -10,7 +10,7 @@ class InputfieldFileS3 extends InputfieldFile implements Module  {
 		return array(
 			'title' => __('InputfieldFileS3', __FILE__), // Module Title
 			'summary' => __('One or more file uploads (sortable)', __FILE__), // Module Summary
-			'version' => 003,
+			'version' => 004,
 			'autoload' => true,
 			);
 	}
@@ -225,7 +225,7 @@ class InputfieldFileS3 extends InputfieldFile implements Module  {
 
 		foreach($this->value as $pagefile) {
 			if($this->processInputFile($input, $pagefile, $n)) $changed = true;
-			if(!$this->localStorage){
+			if(!$this->localStorage && !$this->isAjax){
 				@unlink($pagefile->filename);
 			}
 			$n++;
