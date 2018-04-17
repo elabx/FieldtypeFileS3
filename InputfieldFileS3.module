@@ -18,6 +18,9 @@ class InputfieldFileS3 extends InputfieldFile implements Module  {
 	public function init() {
 		parent::init();
 		$this->addHook('Pagefile::s3url', $this, 's3url');
+        if($this->cf){
+            $this->addHookProperty('Pagefile::cfurl', $this, 'cloudFrontUrl');
+        }
 		$this->addHookProperty("Pagefile::s3url", $this, "s3url");
 	}
 
@@ -253,6 +256,17 @@ class InputfieldFileS3 extends InputfieldFile implements Module  {
 		}
 	}
 
+     protected function cloudFrontUrl($event) {
+		if($this->localStorage) {
+			$event->return = $event->object->url;
+		}
+		else {
+            $ssl = ($this->useSSL) ? 'https' : 'http';
+            $domain = $this->domain();
+            $event->return = "{$ssl}://". $this->cfurl  ."/" . $event->object->page . "/" . $event->object->name;
+        }
+     }
+
 	protected function domain() {
 		switch ($this->region) {
 			case 'us-east-1':
@@ -340,7 +354,7 @@ class InputfieldFileS3 extends InputfieldFile implements Module  {
 
 	// Instantiate S3 client
 	protected function setS3Client() {
-		require_once("aws-sdk/aws-autoloader.php");
+		//require_once("aws-sdk/aws-autoloader.php");
 		$this->s3 = new S3Client([
 			"version"     => "latest",
 			"region"      => $this->region,

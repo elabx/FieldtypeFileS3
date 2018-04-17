@@ -126,6 +126,30 @@ class InputfieldFileS3Config extends ModuleConfig {
 				'columnWidth' => 50,
 				'value' => $this->_('1'),
 			),
+            
+            array(
+                'name'=> "cfOptions",
+                'type'=> 'fieldset',
+                'label'=> 'Cloudfront Options',
+                'children'=> array(
+                    array(
+                        'name'  => 'cf',
+                        'type'  => 'checkbox',
+                        'label' => $this->_('Use CloudFront to serve the assets'),
+                        'description' => $this->_('Check if you want to serve the assets directly from Amazon CloudFront. Uncheck if you want to serve the asset files from the server where ProcessWire is installed.'),
+                        'columnWidth' => 100
+                    ),
+            
+                    array(
+                        'name'  => 'cfurl',
+                        'type'  => 'text',
+                        'label' => $this->_('Domain name for the CloudFront distribution:'),
+                        'description' => $this->_('Set up a CloudFront distribution pointing to the S3 bucket above and deploy it. Use the domain name provided by Amazon or set up your own CNAME pointing to that domain.'),
+                        'columnWidth' => 100
+                    )
+                )
+            )
+            
         ));
     }
 }
