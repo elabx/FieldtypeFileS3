@@ -335,13 +335,19 @@ class InputfieldFileS3 extends InputfieldFile implements Module  {
 
 	protected function uploadFileToS3($pagefile, $pageID) {
 		$this->setS3Client();
-		$this->s3->PutObject([
+        $s3args = [
 			"ACL"         => $this->ACL,
 			"Bucket"      => $this->bucket,
 			"Key"         => "{$pageID}/{$pagefile->name}",
 			"SourceFile"  => $pagefile->filename,
 			"ContentType" => mime_content_type($pagefile->filename)
-		]);
+		];
+
+        if($this->cache){
+            $s3args['CacheControl'] = 'max-age=' . $this->cache;
+        }
+        
+		$this->s3->PutObject($s3args);
 	}
 
 	protected function deleteFileFromS3($pagefile, $pageID) {

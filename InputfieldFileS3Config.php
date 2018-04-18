@@ -146,6 +146,15 @@ class InputfieldFileS3Config extends ModuleConfig {
                         'label' => $this->_('Domain name for the CloudFront distribution:'),
                         'description' => $this->_('Set up a CloudFront distribution pointing to the S3 bucket above and deploy it. Use the domain name provided by Amazon or set up your own CNAME pointing to that domain.'),
                         'columnWidth' => 100
+                    ),
+                     array(
+                        'name'  => 'cache',
+                        'type'  => 'integer',
+                        'notes' => $this->_('Ex: 3600 = 1 hour; 86400 = 24 hours; 604800 = 7 days; 2592000 = 30 days'),
+                        'label' => $this->_('Set Cache-Control Directive for the files uploaded to S3'),
+                        'description' => $this->_('Fill this field with the a number of seconds, it will set an Cache-Control: max-age=seconds on the files to handle the browser and CloudFront cache. Read more about it [here](http://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Expiration.html). Leaving the field blank doesn\'t add any directive to the files.'),
+                        'columnWidth' => 100,
+                        'value' => 8400
                     )
                 )
             )
