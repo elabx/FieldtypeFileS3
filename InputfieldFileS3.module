@@ -343,8 +343,8 @@ class InputfieldFileS3 extends InputfieldFile implements Module  {
 			"ContentType" => mime_content_type($pagefile->filename)
 		];
 
-        if($this->cache){
-            $s3args['CacheControl'] = 'max-age=' . $this->cache;
+        if($this->cacheHeader){
+            $s3args['CacheControl'] = 'max-age=' . $this->cacheHeader;
         }
         
 		$this->s3->PutObject($s3args);

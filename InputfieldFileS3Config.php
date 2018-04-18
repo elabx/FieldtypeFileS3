@@ -148,13 +148,13 @@ class InputfieldFileS3Config extends ModuleConfig {
                         'columnWidth' => 100
                     ),
                      array(
-                        'name'  => 'cache',
+                        'name'  => 'cacheHeader',
                         'type'  => 'integer',
                         'notes' => $this->_('Ex: 3600 = 1 hour; 86400 = 24 hours; 604800 = 7 days; 2592000 = 30 days'),
                         'label' => $this->_('Set Cache-Control Directive for the files uploaded to S3'),
                         'description' => $this->_('Fill this field with the a number of seconds, it will set an Cache-Control: max-age=seconds on the files to handle the browser and CloudFront cache. Read more about it [here](http://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Expiration.html). Leaving the field blank doesn\'t add any directive to the files.'),
                         'columnWidth' => 100,
-                        'value' => 8400
+                        'value' => 86400
                     )
                 )
             )
