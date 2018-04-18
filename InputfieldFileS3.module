@@ -10,7 +10,7 @@ class InputfieldFileS3 extends InputfieldFile implements Module  {
 		return array(
 			'title' => __('InputfieldFileS3', __FILE__), // Module Title
 			'summary' => __('One or more file uploads (sortable)', __FILE__), // Module Summary
-			'version' => 004,
+			'version' => 005,
 			'autoload' => true,
 			);
 	}
